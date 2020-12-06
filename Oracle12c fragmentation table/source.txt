@@ -2,7 +2,7 @@ truncate table kks$frag_512b;
 truncate table kks$frag_1024b;
 truncate table kks$frag_2048b;
 truncate table kks$seg_grow_stat;
-
+---------------------Исходные данные----------------
 drop table kks$frag_512b;
 create table kks$frag_512b(
 id1 number not null,
@@ -160,13 +160,31 @@ COMMIT; --write wait;
 end loop;
 end;
 end;
+---------------------Исходные данные----------------
 
 
-truncate table kks$frag_512b;
-truncate table kks$frag_1024b;
-truncate table kks$frag_2048b;
-truncate table kks$seg_grow_stat;
 
+-----Пример запуска
 begin
  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_512B',v_segment_type => 'TABLE',v_row_lenght => 512,v_ses => 1,loop1 => 100,tag =>'t3_100');
+ end;
+-----Пример запуска 
+ 
+ 
+ 
+ 
+ ---------------Для запуска теста делалось следующее:-----------
+ -- Запуск делается в 3х сессиях. v_ses => 1, v_ses => 2 и v_ses =>3, tag по желанию, для каждой таблицы.
+ begin
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 100,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 500,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 700,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 1000,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 2000,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 1000,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 700,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 500,tag =>'t2');
+  kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_1024B',v_segment_type => 'TABLE',v_row_lenght => 1024,v_ses => 1,loop1 => 100,tag =>'t2');
 end;
+---------------Запуск для теста-----------
+ 
