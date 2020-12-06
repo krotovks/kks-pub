@@ -1,0 +1,172 @@
+truncate table kks$frag_512b;
+truncate table kks$frag_1024b;
+truncate table kks$frag_2048b;
+truncate table kks$seg_grow_stat;
+
+drop table kks$frag_512b;
+create table kks$frag_512b(
+id1 number not null,
+string1 varchar2(512 char))
+tablespace users;
+create  index ix_id1 on kks$frag_512b(id1) tablespace users;
+
+drop table kks$frag_1024b;
+create table kks$frag_1024b(
+id1 number,
+string1 varchar2(1024 char))
+tablespace users;
+create  index ix_id1024 on kks$frag_1024b(id1) tablespace users;
+
+drop table kks$frag_2048b;
+create table kks$frag_2048b(
+id1 number,
+string1 varchar2(2048 char))
+tablespace users;
+create index ix_id2048 on kks$frag_2048b(id1) tablespace users;
+
+drop table kks$seg_grow_stat;
+create table kks$seg_grow_stat(
+unformatted_blocks NUMBER,
+unformatted_bytes  NUMBER,
+fs1_blocks         NUMBER,
+fs1_bytes          NUMBER,
+fs2_blocks         NUMBER,
+fs2_bytes          NUMBER,
+fs3_blocks         NUMBER,
+fs3_bytes          NUMBER,
+fs4_blocks         NUMBER,
+fs4_bytes          NUMBER,
+full_blocks        NUMBER,
+full_bytes         NUMBER,
+date1 date default sysdate,
+segment_name varchar2(200),
+segment_type varchar2(200),
+row_lenght number,
+commit_write varchar2(100),
+loop1              NUMBER),
+tag varchar2(20)
+tablespace users;
+
+CREATE OR REPLACE PROCEDURE kks$seg_grow_proc_test2
+(v_segment_name varchar2,
+ v_segment_type varchar2,
+ segment_owner varchar2,
+ v_row_lenght number,
+ loop2 number default 100,
+ loop1 number default 1000,
+ v_ses number default 1,
+ tag varchar2 default null) AS
+
+------<vLoop>-----
+v_loop1 number;
+v_loop2 number;
+------<vLoop>-----
+--------<vSegSize>----------
+v_unformatted_blocks NUMBER;
+v_unformatted_bytes  NUMBER;
+v_fs1_blocks         NUMBER;
+v_fs1_bytes          NUMBER;
+v_fs2_blocks         NUMBER;
+v_fs2_bytes          NUMBER;
+v_fs3_blocks         NUMBER;
+v_fs3_bytes          NUMBER;
+v_fs4_blocks         NUMBER;
+v_fs4_bytes          NUMBER;
+v_full_blocks        NUMBER;
+v_full_bytes         NUMBER;
+--------->vSegSize<---------
+begin
+  --test2
+
+  begin
+  for  v_loop2 in loop2*v_ses..loop2*v_ses+loop2
+        loop
+          begin
+         for v_loop1 in loop1*v_ses..loop1*v_ses+loop1
+               loop
+      execute immediate q'!insert into !'|| v_segment_name || q'! values(!'||v_loop1||q'!,rpad('string',!'||v_row_lenght||q'!,'a'))!';
+
+         COMMIT;-- write wait;
+         end loop;
+         end;
+
+          begin
+         for v_loop1 in loop1*v_ses..loop1*v_ses+loop1
+           loop
+      execute immediate q'!delete from !'|| v_segment_name || q'! where id1=!'||v_loop1;
+
+
+         COMMIT;-- write wait;
+         end loop;
+         end;
+dbms_space.space_usage(segment_owner => segment_owner,
+segment_name => v_segment_name,
+segment_type => v_segment_type,
+unformatted_blocks=>v_unformatted_blocks,
+unformatted_bytes =>v_unformatted_bytes,
+fs1_blocks        =>v_fs1_blocks,
+fs1_bytes         =>v_fs1_bytes,
+fs2_blocks        =>v_fs2_blocks,
+fs2_bytes         =>v_fs2_bytes,
+fs3_blocks        =>v_fs3_blocks,
+fs3_bytes         =>v_fs3_bytes,
+fs4_blocks        =>v_fs4_blocks,
+fs4_bytes         =>v_fs4_bytes,
+full_blocks       =>v_full_blocks,
+full_bytes        =>v_full_bytes
+);
+insert into kks$seg_grow_stat
+(
+unformatted_blocks,
+unformatted_bytes,
+fs1_blocks,
+fs1_bytes,
+fs2_blocks,
+fs2_bytes,
+fs3_blocks,
+fs3_bytes,
+fs4_blocks,
+fs4_bytes,
+full_blocks,
+full_bytes,
+segment_name,
+segment_type,
+row_lenght,
+commit_write,
+loop1,
+TAG
+) values(
+v_unformatted_blocks,
+v_unformatted_bytes,
+v_fs1_blocks,
+v_fs1_bytes,
+v_fs2_blocks,
+v_fs2_bytes,
+v_fs3_blocks,
+v_fs3_bytes,
+v_fs4_blocks,
+v_fs4_bytes,
+v_full_blocks,
+v_full_bytes,
+v_segment_name,
+v_segment_type,
+v_row_lenght,
+'COMMIT;',
+loop1,
+tag
+);
+dbms_lock.sleep(seconds => 1);
+COMMIT; --write wait;
+end loop;
+end;
+end;
+
+
+truncate table kks$frag_512b;
+truncate table kks$frag_1024b;
+truncate table kks$frag_2048b;
+truncate table kks$seg_grow_stat;
+
+begin
+ kks$seg_grow_proc_test2(segment_owner => 'SYSTEM',v_segment_name =>'KKS$FRAG_512B',v_segment_type => 'TABLE',v_row_lenght => 512,v_ses => 1,loop1 => 100,tag =>'t3_100');
+end;
